@@ -10,6 +10,9 @@ import cv2
 import fastmot
 import fastmot.models
 from fastmot.utils import ConfigDecoder, Profiler
+from fastmot.utils.rect import get_center
+
+import time
 
 
 def main():
@@ -92,16 +95,22 @@ def main():
                         for track in mot.visible_tracks():
                             tl = track.tlbr[:2] / config.resize_to * stream.resolution
                             br = track.tlbr[2:] / config.resize_to * stream.resolution
+                            tl = track.tlbr[:2]
+                            br = track.tlbr[2:]
                             w, h = br - tl + 1
+                            center = get_center(track.tlbr)
+                            cv2.circle(frame, (int(center[0]), int(center[1])), 2, (0, 255, 255), thickness=-1)
+
                             txt.write(f'{mot.frame_count},{track.trk_id},{tl[0]:.6f},{tl[1]:.6f},'
                                       f'{w:.6f},{h:.6f},-1,-1,-1\n')
 
                 if args.show:
                     cv2.imshow('Video', frame)
-                    if cv2.waitKey(1) & 0xFF == 27:
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
                 if args.output_uri is not None:
                     stream.write(frame)
+                time.sleep(0.01)
     finally:
         # clean up resources
         if txt is not None:
